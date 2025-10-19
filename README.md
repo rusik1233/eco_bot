@@ -124,7 +124,7 @@ python bot.py
 
 ## 👥 Авторы
 
-- **Ваше Имя** - [GitHub профиль](https://github.com/rusik1233)
+- **Rusik** - [GitHub профиль](https://github.com/rusik1233)
 
 <div align="center">
 
