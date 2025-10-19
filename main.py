@@ -2,7 +2,7 @@ import telebot
 import sqlite3 as sq
 import time
 import asyncio
-
+from config import TOKEN
 def init_db():
     connection = sq.connect('player.db')
     cursor = connection.cursor()
@@ -29,7 +29,7 @@ def init_db():
 
 init_db()
 
-bot = telebot.TeleBot("ТУТ ВАШ ТОКЕН", parse_mode=None)
+bot = telebot.TeleBot(TOKEN, parse_mode=None)
 def update_player_activity(telegram_id):
     """Обновляет время последней активности"""
     connection = sq.connect('game.db')
