@@ -29,7 +29,16 @@ def init_db():
             last_daily INTEGER DEFAULT 0,
             last_work_time INTEGER DEFAULT 0,
             last_herbs_time INTEGER DEFAULT 0,
-            last_recycle_time INTEGER DEFAULT 0
+            last_recycle_time INTEGER DEFAULT 0,
+            last_repair_time INTEGER DEFAULT 0,
+            last_energy_time INTEGER DEFAULT 0,
+            last_tech_time INTEGER DEFAULT 0,
+            last_nature_photo_time INTEGER DEFAULT 0,
+            last_camp_time INTEGER DEFAULT 0,
+            last_wildlife_time INTEGER DEFAULT 0,
+            last_networking_time INTEGER DEFAULT 0,
+            last_market_research_time INTEGER DEFAULT 0,
+            last_buy_supplies_time INTEGER DEFAULT 0
         )
     ''')
     cursor.execute('''
@@ -171,6 +180,117 @@ def check_game_over(telegram_id):
             return "🌫️ Экологическая катастрофа! Уровень газов достиг критической отметки."
     
     return None
+
+@bot.message_handler(commands=['menu'])
+def menu(message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    btn1 = types.KeyboardButton("/info")
+    btn2 = types.KeyboardButton("/bonus")
+    btn3 = types.KeyboardButton("/locate")
+    btn4 = types.KeyboardButton("/doing")
+    btn5 = types.KeyboardButton("/investition")
+    markup.add(btn1, btn2, btn3, btn4, btn5)
+    bot.send_message(message.chat.id, text="Меню".format(message.from_user), reply_markup=markup)
+@bot.message_handler(commands=['info'])
+def info(message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    btn1 = types.KeyboardButton("/start")
+    btn2 = types.KeyboardButton("/profile")
+    btn3 = types.KeyboardButton("/balance")
+    btn4 = types.KeyboardButton("/stats")
+    btn5 = types.KeyboardButton("/help")
+    btn6 = types.KeyboardButton("/guide")
+    btn7 = types.KeyboardButton("/top")
+    btn8 = types.KeyboardButton("/menu")
+    markup.add(btn1, btn2, btn3, btn4, btn5, btn6, btn7, btn8)
+    bot.send_message(message.chat.id, text="Информация".format(message.from_user), reply_markup=markup)
+
+
+@bot.message_handler(commands=['bonus'])
+def bonus(message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    btn1 = types.KeyboardButton("/daily")
+    btn2 = types.KeyboardButton("/news")
+    btn3 = types.KeyboardButton("/quest")
+    btn4 = types.KeyboardButton("/claim_quest")
+    btn5 = types.KeyboardButton("/level_rewards")
+    btn6 = types.KeyboardButton("/claim_level")
+    btn7 = types.KeyboardButton("/menu")
+    markup.add(btn1, btn2, btn3, btn4, btn5, btn6, btn7,)
+    bot.send_message(message.chat.id, text="бонусы".format(message.from_user), reply_markup=markup)
+@bot.message_handler(commands=['locate'])
+def locate(message):
+    telegram_id = message.from_user.id
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    btn1 = types.KeyboardButton("/location")
+    btn2 = types.KeyboardButton("/go")
+    btn3 = types.KeyboardButton("/go_city")
+    btn4 = types.KeyboardButton("/go_forest")
+    btn5 = types.KeyboardButton("/go_industrial_zone")
+    btn6 = types.KeyboardButton("/menu")
+    markup.add(btn1, btn2, btn3, btn4, btn5, btn6,)
+    bot.send_message(message.chat.id, text="локации".format(message.from_user), reply_markup=markup)
+@bot.message_handler(commands=['doing'])
+def doing(message):
+    telegram_id = message.from_user.id
+    connection = sq.connect('player.db')
+    cursor = connection.cursor()
+    
+    try:
+        cursor.execute('SELECT location FROM players WHERE telegram_id = ?', (telegram_id,))
+        result = cursor.fetchone()
+        
+        if not result:
+            bot.send_message(message.chat.id, "❌ Игрок не найден!")
+            return
+            
+        location = result[0]
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        
+        if location == 'city':
+            btn1 = types.KeyboardButton("/work_office")
+            btn2 = types.KeyboardButton("/buy_supplies") 
+            btn3 = types.KeyboardButton("/market_research")
+            btn4 = types.KeyboardButton("/networking")
+            markup.add(btn1, btn2, btn3, btn4)
+            
+        elif location == 'forest':
+            btn1 = types.KeyboardButton("/collect_herbs")
+            btn2 = types.KeyboardButton("/study_wildlife")
+            btn3 = types.KeyboardButton("/eco_camp") 
+            btn4 = types.KeyboardButton("/nature_photo")
+            markup.add(btn1, btn2, btn3, btn4)
+            
+        elif location == 'industrial_zone':
+            btn1 = types.KeyboardButton("/recycle_waste")
+            btn2 = types.KeyboardButton("/tech_research")
+            btn3 = types.KeyboardButton("/energy_audit")
+            btn4 = types.KeyboardButton("/repair_equipment")
+            markup.add(btn1, btn2, btn3, btn4)
+            
+        btn_base1 = types.KeyboardButton("/grow_tree")
+        btn_base2 = types.KeyboardButton("/grow_tube")
+        btn_base3 = types.KeyboardButton("/interview")
+        btn_base4 = types.KeyboardButton("/money")
+        btn_menu = types.KeyboardButton("/menu")
+        markup.add(btn_base1, btn_base2, btn_base3, btn_base4, btn_menu)
+        
+        bot.send_message(message.chat.id, f"📍 {location} - Действия:", reply_markup=markup)
+        
+    except Exception as e:
+        bot.send_message(message.chat.id, f"Ошибка: {e}")
+    finally:
+        cursor.close()
+        connection.close()
+
+@bot.message_handler(commands=['investition'])
+def invest(message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    btn1 = types.KeyboardButton("/invest")
+    btn2 = types.KeyboardButton("/get_profit")
+    btn3 = types.KeyboardButton("/menu")
+    markup.add(btn1, btn2, btn3,)
+    bot.send_message(message.chat.id, f"инвестиции", reply_markup=markup)
 
 @bot.message_handler(commands=['profile', 'balance', 'stats'])
 def show_profile(message):
@@ -345,38 +465,38 @@ def what_do(message):
             
             actions = []
             if player_level >= 1:
-                actions.append("🌳 /grow_tree - посадить деревья (10 eco coin)")
+                actions.append("🌳 /grow_tree - посадить деревья (10 eco coin, 5 мин)")
             if player_level >= 2:
-                actions.append("🎥 /grow_tube - снять видео (40 eco coin)")
+                actions.append("🎥 /grow_tube - снять видео (40 eco coin, 8 мин)")
             if player_level >= 10:
-                actions.append("📺 /interview - дать интервью (60 eco coin)")
+                actions.append("📺 /interview - дать интервью (60 eco coin, 8 мин)")
             
-            actions.append("💰 /money - собрать пассивный доход")
+            actions.append("💰 /money - собрать пассивный доход (1 мин)")
             actions.append("💼 /invest - инвестировать в компании")
             actions.append("💵 /get_profit - получить доход от инвестиций")
-            actions.append("🎁 /daily - ежедневная награда")
+            actions.append("🎁 /daily - ежедневная награда (24 ч)")
             actions.append("📰 /news - экологические новости")
             
             if location == 'city':
                 actions.append("\n🏙️ ДЕЙСТВИЯ В ГОРОДЕ:")
-                actions.append("🏢 /work_office - работать в офисе (50 eco coin)")
-                actions.append("🛒 /buy_supplies - купить расходники (30 eco coin)")
-                actions.append("📊 /market_research - исследование рынка (25 eco coin)")
-                actions.append("🤝 /networking - нетворкинг (40 eco coin)")
+                actions.append("🏢 /work_office - работать в офисе (50 eco coin, 5 мин)")
+                actions.append("🛒 /buy_supplies - купить расходники (30 eco coin, 2 мин)")
+                actions.append("📊 /market_research - исследование рынка (25 eco coin, 3 мин)")
+                actions.append("🤝 /networking - нетворкинг (40 eco coin, 4 мин)")
                 
             elif location == 'forest':
                 actions.append("\n🌲 ДЕЙСТВИЯ В ЛЕСУ:")
-                actions.append("🌿 /collect_herbs - собрать травы (15 eco coin)")
-                actions.append("🦋 /study_wildlife - изучить дикую природу (35 eco coin)")
-                actions.append("🏕️ /eco_camp - эко-лагерь (60 eco coin)")
-                actions.append("📸 /nature_photo - фотосессия природы (20 eco coin)")
+                actions.append("🌿 /collect_herbs - собрать травы (15 eco coin, 3 мин)")
+                actions.append("🦋 /study_wildlife - изучить дикую природу (35 eco coin, 2 мин)")
+                actions.append("🏕️ /eco_camp - эко-лагерь (60 eco coin, 2 мин)")
+                actions.append("📸 /nature_photo - фотосессия природы (20 eco coin, 2 мин)")
                 
             elif location == 'industrial_zone':
                 actions.append("\n🏭 ДЕЙСТВИЯ В ПРОМЗОНЕ:")
-                actions.append("♻️ /recycle_waste - переработать отходы (80 eco coin)")
-                actions.append("🔬 /tech_research - технические исследования (100 eco coin)")
-                actions.append("⚡ /energy_audit - энергоаудит (70 eco coin)")
-                actions.append("🛠️ /repair_equipment - ремонт оборудования (90 eco coin)")
+                actions.append("♻️ /recycle_waste - переработать отходы (80 eco coin, 7 мин)")
+                actions.append("🔬 /tech_research - технические исследования (100 eco coin, 2 мин)")
+                actions.append("⚡ /energy_audit - энергоаудит (70 eco coin, 2 мин)")
+                actions.append("🛠️ /repair_equipment - ремонт оборудования (90 eco coin, 2 мин)")
             
             message_text = f"📍 Локация: {location}\n\n" + "\n".join(actions)
             bot.send_message(message.chat.id, message_text)
@@ -761,7 +881,6 @@ def handle_answer(call):
     try:
         if selected == правильный_ответ:
             bot.send_message(call.message.chat.id, '🎉 Молодец! Правильный ответ.')
-            bot.delete_message(call.message.chat.id, call.message.message_id)
             cursor.execute('''
                     UPDATE players 
                     SET balance = balance + 40,
@@ -956,8 +1075,8 @@ def go_any(telegram_id, new_loc , cost, min_level=0):
         
         current_time = int(time.time())
         
-        if current_time - last_go_time < 60:
-            remaining = 60 - (current_time - last_go_time)
+        if current_time - last_go_time < 30:
+            remaining = 30 - (current_time - last_go_time)
             resultss +=f"⏳ Перезарядка: {remaining} секунд"
             return resultss
         if location == new_loc:
@@ -1300,21 +1419,33 @@ def buy_supplies(message):
     cursor = connection.cursor()
     
     try:
-        cursor.execute('SELECT location, balance FROM players WHERE telegram_id = ?', (telegram_id,))
+        cursor.execute('SELECT location, balance, last_buy_supplies_time FROM players WHERE telegram_id = ?', (telegram_id,))
         result = cursor.fetchone()
         
         if not result:
             bot.send_message(message.chat.id, "❌ Игрок не найден!")
             return
             
-        location, balance = result
+        location, balance, last_buy_time = result
+        current_time = int(time.time())
         
         if location != 'city':
             bot.send_message(message.chat.id, "❌ Эта команда доступна только в городе!")
             return
             
+        if current_time - (last_buy_time or 0) < 120:
+            remaining = 120 - (current_time - (last_buy_time or 0))
+            bot.send_message(message.chat.id, f"⏳ Перезарядка: {remaining} секунд")
+            return
+            
         if balance >= 30:
-            cursor.execute('UPDATE players SET balance = balance - 30 + 20, reputation = reputation + 1 WHERE telegram_id = ?', (telegram_id,))
+            cursor.execute('''
+                UPDATE players 
+                SET balance = balance - 30 + 20, 
+                    reputation = CASE WHEN reputation + 1 > 100 THEN 100 ELSE reputation + 1 END,
+                    last_buy_supplies_time = ? 
+                WHERE telegram_id = ?
+            ''', (current_time, telegram_id))
             connection.commit()
             bot.send_message(message.chat.id, "🛒 Купили расходники!\n💰 -30 +20 eco coin\n⭐ Reputation +1")
         else:
@@ -1325,6 +1456,10 @@ def buy_supplies(message):
     finally:
         cursor.close()
         connection.close()
+    
+    game_over = check_game_over(telegram_id)
+    if game_over:
+        bot.send_message(message.chat.id, f"❌ Игра окончена!\n{game_over}")
 
 @bot.message_handler(commands=['market_research'])
 def market_research(message):
@@ -1333,21 +1468,33 @@ def market_research(message):
     cursor = connection.cursor()
     
     try:
-        cursor.execute('SELECT location, balance FROM players WHERE telegram_id = ?', (telegram_id,))
+        cursor.execute('SELECT location, balance, last_market_research_time FROM players WHERE telegram_id = ?', (telegram_id,))
         result = cursor.fetchone()
         
         if not result:
             bot.send_message(message.chat.id, "❌ Игрок не найден!")
             return
             
-        location, balance = result
+        location, balance, last_research_time = result
+        current_time = int(time.time())
         
         if location != 'city':
             bot.send_message(message.chat.id, "❌ Эта команда доступна только в городе!")
             return
             
+        if current_time - (last_research_time or 0) < 180:
+            remaining = 180 - (current_time - (last_research_time or 0))
+            bot.send_message(message.chat.id, f"⏳ Перезарядка: {remaining} секунд")
+            return
+            
         if balance >= 25:
-            cursor.execute('UPDATE players SET balance = balance - 25 + 40, level = level + 1 WHERE telegram_id = ?', (telegram_id,))
+            cursor.execute('''
+                UPDATE players 
+                SET balance = balance - 25 + 40, 
+                    level = level + 1,
+                    last_market_research_time = ? 
+                WHERE telegram_id = ?
+            ''', (current_time, telegram_id))
             connection.commit()
             bot.send_message(message.chat.id, "📊 Провели исследование рынка!\n💰 -25 +40 eco coin\n🎯 Level +1")
         else:
@@ -1358,6 +1505,10 @@ def market_research(message):
     finally:
         cursor.close()
         connection.close()
+    
+    game_over = check_game_over(telegram_id)
+    if game_over:
+        bot.send_message(message.chat.id, f"❌ Игра окончена!\n{game_over}")
 
 @bot.message_handler(commands=['networking'])
 def networking(message):
@@ -1366,21 +1517,33 @@ def networking(message):
     cursor = connection.cursor()
     
     try:
-        cursor.execute('SELECT location, balance FROM players WHERE telegram_id = ?', (telegram_id,))
+        cursor.execute('SELECT location, balance, last_networking_time FROM players WHERE telegram_id = ?', (telegram_id,))
         result = cursor.fetchone()
         
         if not result:
             bot.send_message(message.chat.id, "❌ Игрок не найден!")
             return
             
-        location, balance = result
+        location, balance, last_networking_time = result
+        current_time = int(time.time())
         
         if location != 'city':
             bot.send_message(message.chat.id, "❌ Эта команда доступна только в городе!")
             return
             
+        if current_time - (last_networking_time or 0) < 240:
+            remaining = 240 - (current_time - (last_networking_time or 0))
+            bot.send_message(message.chat.id, f"⏳ Перезарядка: {remaining} секунд")
+            return
+            
         if balance >= 40:
-            cursor.execute('UPDATE players SET balance = balance - 40 + 60, passive_money = passive_money + 5 WHERE telegram_id = ?', (telegram_id,))
+            cursor.execute('''
+                UPDATE players 
+                SET balance = balance - 40 + 60, 
+                    passive_money = passive_money + 5,
+                    last_networking_time = ? 
+                WHERE telegram_id = ?
+            ''', (current_time, telegram_id))
             connection.commit()
             bot.send_message(message.chat.id, "🤝 Провели нетворкинг!\n💰 -40 +60 eco coin\n💵 Passive money +5")
         else:
@@ -1391,6 +1554,10 @@ def networking(message):
     finally:
         cursor.close()
         connection.close()
+    
+    game_over = check_game_over(telegram_id)
+    if game_over:
+        bot.send_message(message.chat.id, f"❌ Игра окончена!\n{game_over}")
 
 @bot.message_handler(commands=['study_wildlife'])
 def study_wildlife(message):
@@ -1399,21 +1566,33 @@ def study_wildlife(message):
     cursor = connection.cursor()
     
     try:
-        cursor.execute('SELECT location, balance FROM players WHERE telegram_id = ?', (telegram_id,))
+        cursor.execute('SELECT location, balance, last_wildlife_time FROM players WHERE telegram_id = ?', (telegram_id,))
         result = cursor.fetchone()
         
         if not result:
             bot.send_message(message.chat.id, "❌ Игрок не найден!")
             return
             
-        location, balance = result
+        location, balance, last_wildlife_time = result
+        current_time = int(time.time())
         
         if location != 'forest':
             bot.send_message(message.chat.id, "❌ Эта команда доступна только в лесу!")
             return
             
+        if current_time - (last_wildlife_time or 0) < 300:
+            remaining = 300 - (current_time - (last_wildlife_time or 0))
+            bot.send_message(message.chat.id, f"⏳ Перезарядка: {remaining} секунд")
+            return
+            
         if balance >= 35:
-            cursor.execute('UPDATE players SET balance = balance - 35 + 55, reputation = reputation + 2 WHERE telegram_id = ?', (telegram_id,))
+            cursor.execute('''
+                UPDATE players 
+                SET balance = balance - 35 + 55, 
+                    reputation = CASE WHEN reputation + 2 > 100 THEN 100 ELSE reputation + 2 END,
+                    last_wildlife_time = ? 
+                WHERE telegram_id = ?
+            ''', (current_time, telegram_id))
             connection.commit()
             bot.send_message(message.chat.id, "🦋 Изучили дикую природу!\n💰 -35 +55 eco coin\n⭐ Reputation +2")
         else:
@@ -1424,6 +1603,10 @@ def study_wildlife(message):
     finally:
         cursor.close()
         connection.close()
+    
+    game_over = check_game_over(telegram_id)
+    if game_over:
+        bot.send_message(message.chat.id, f"❌ Игра окончена!\n{game_over}")
 
 @bot.message_handler(commands=['eco_camp'])
 def eco_camp(message):
@@ -1432,21 +1615,34 @@ def eco_camp(message):
     cursor = connection.cursor()
     
     try:
-        cursor.execute('SELECT location, balance FROM players WHERE telegram_id = ?', (telegram_id,))
+        cursor.execute('SELECT location, balance, last_camp_time FROM players WHERE telegram_id = ?', (telegram_id,))
         result = cursor.fetchone()
         
         if not result:
             bot.send_message(message.chat.id, "❌ Игрок не найден!")
             return
             
-        location, balance = result
+        location, balance, last_camp_time = result
+        current_time = int(time.time())
         
         if location != 'forest':
             bot.send_message(message.chat.id, "❌ Эта команда доступна только в лесу!")
             return
             
+        if current_time - (last_camp_time or 0) < 300:
+            remaining = 300 - (current_time - (last_camp_time or 0))
+            bot.send_message(message.chat.id, f"⏳ Перезарядка: {remaining} секунд")
+            return
+            
         if balance >= 60:
-            cursor.execute('UPDATE players SET balance = balance - 60 + 100, gas_level = gas_level - 2, reputation = reputation + 3 WHERE telegram_id = ?', (telegram_id,))
+            cursor.execute('''
+                UPDATE players 
+                SET balance = balance - 60 + 100, 
+                    gas_level = CASE WHEN gas_level - 2 < 0 THEN 0 ELSE gas_level - 2 END,
+                    reputation = CASE WHEN reputation + 3 > 100 THEN 100 ELSE reputation + 3 END,
+                    last_camp_time = ? 
+                WHERE telegram_id = ?
+            ''', (current_time, telegram_id))
             connection.commit()
             bot.send_message(message.chat.id, "🏕️ Организовали эко-лагерь!\n💰 -60 +100 eco coin\n⛽ Gas level -2\n⭐ Reputation +3")
         else:
@@ -1457,7 +1653,10 @@ def eco_camp(message):
     finally:
         cursor.close()
         connection.close()
-interview
+    
+    game_over = check_game_over(telegram_id)
+    if game_over:
+        bot.send_message(message.chat.id, f"❌ Игра окончена!\n{game_over}")
 @bot.message_handler(commands=['nature_photo'])
 def nature_photo(message):
     telegram_id = message.from_user.id
@@ -1465,21 +1664,33 @@ def nature_photo(message):
     cursor = connection.cursor()
     
     try:
-        cursor.execute('SELECT location, balance FROM players WHERE telegram_id = ?', (telegram_id,))
+        cursor.execute('SELECT location, balance, last_nature_photo_time FROM players WHERE telegram_id = ?', (telegram_id,))
         result = cursor.fetchone()
         
         if not result:
             bot.send_message(message.chat.id, "❌ Игрок не найден!")
             return
             
-        location, balance = result
+        location, balance, last_nature_photo_time = result
+        current_time = int(time.time())
         
         if location != 'forest':
             bot.send_message(message.chat.id, "❌ Эта команда доступна только в лесу!")
             return
             
+        if current_time - (last_nature_photo_time or 0) < 300:
+            remaining = 300 - (current_time - (last_nature_photo_time or 0))
+            bot.send_message(message.chat.id, f"⏳ Перезарядка: {remaining} секунд")
+            return
+            
         if balance >= 20:
-            cursor.execute('UPDATE players SET balance = balance - 20 + 35, passive_money = passive_money + 3 WHERE telegram_id = ?', (telegram_id,))
+            cursor.execute('''
+                UPDATE players 
+                SET balance = balance - 20 + 35, 
+                    passive_money = passive_money + 3,
+                    last_nature_photo_time = ? 
+                WHERE telegram_id = ?
+            ''', (current_time, telegram_id))
             connection.commit()
             bot.send_message(message.chat.id, "📸 Провели фотосессию природы!\n💰 -20 +35 eco coin\n💵 Passive money +3")
         else:
@@ -1490,6 +1701,10 @@ def nature_photo(message):
     finally:
         cursor.close()
         connection.close()
+    
+    game_over = check_game_over(telegram_id)
+    if game_over:
+        bot.send_message(message.chat.id, f"❌ Игра окончена!\n{game_over}")
 
 @bot.message_handler(commands=['tech_research'])
 def tech_research(message):
@@ -1498,21 +1713,33 @@ def tech_research(message):
     cursor = connection.cursor()
     
     try:
-        cursor.execute('SELECT location, balance FROM players WHERE telegram_id = ?', (telegram_id,))
+        cursor.execute('SELECT location, balance, last_tech_time FROM players WHERE telegram_id = ?', (telegram_id,))
         result = cursor.fetchone()
         
         if not result:
             bot.send_message(message.chat.id, "❌ Игрок не найден!")
             return
             
-        location, balance = result
+        location, balance, last_tech_time = result
+        current_time = int(time.time())
         
         if location != 'industrial_zone':
             bot.send_message(message.chat.id, "❌ Эта команда доступна только в промзоне!")
             return
             
+        if current_time - (last_tech_time or 0) < 300:
+            remaining = 300 - (current_time - (last_tech_time or 0))
+            bot.send_message(message.chat.id, f"⏳ Перезарядка: {remaining} секунд")
+            return
+            
         if balance >= 100:
-            cursor.execute('UPDATE players SET balance = balance - 100 + 180, level = level + 2 WHERE telegram_id = ?', (telegram_id,))
+            cursor.execute('''
+                UPDATE players 
+                SET balance = balance - 100 + 180, 
+                    level = level + 2,
+                    last_tech_time = ? 
+                WHERE telegram_id = ?
+            ''', (current_time, telegram_id))
             connection.commit()
             bot.send_message(message.chat.id, "🔬 Провели технические исследования!\n💰 -100 +180 eco coin\n🎯 Level +2")
         else:
@@ -1523,6 +1750,10 @@ def tech_research(message):
     finally:
         cursor.close()
         connection.close()
+    
+    game_over = check_game_over(telegram_id)
+    if game_over:
+        bot.send_message(message.chat.id, f"❌ Игра окончена!\n{game_over}")
 
 @bot.message_handler(commands=['energy_audit'])
 def energy_audit(message):
@@ -1531,21 +1762,34 @@ def energy_audit(message):
     cursor = connection.cursor()
     
     try:
-        cursor.execute('SELECT location, balance FROM players WHERE telegram_id = ?', (telegram_id,))
+        cursor.execute('SELECT location, balance, last_energy_time FROM players WHERE telegram_id = ?', (telegram_id,))
         result = cursor.fetchone()
         
         if not result:
             bot.send_message(message.chat.id, "❌ Игрок не найден!")
             return
             
-        location, balance = result
+        location, balance, last_energy_time = result
+        current_time = int(time.time())
         
         if location != 'industrial_zone':
             bot.send_message(message.chat.id, "❌ Эта команда доступна только в промзоне!")
             return
             
+        if current_time - (last_energy_time or 0) < 300:
+            remaining = 300 - (current_time - (last_energy_time or 0))
+            bot.send_message(message.chat.id, f"⏳ Перезарядка: {remaining} секунд")
+            return
+            
         if balance >= 70:
-            cursor.execute('UPDATE players SET balance = balance - 70 + 120, gas_level = gas_level - 4, reputation = reputation + 1 WHERE telegram_id = ?', (telegram_id,))
+            cursor.execute('''
+                UPDATE players 
+                SET balance = balance - 70 + 120, 
+                    gas_level = CASE WHEN gas_level - 4 < 0 THEN 0 ELSE gas_level - 4 END,
+                    reputation = CASE WHEN reputation + 1 > 100 THEN 100 ELSE reputation + 1 END,
+                    last_energy_time = ? 
+                WHERE telegram_id = ?
+            ''', (current_time, telegram_id))
             connection.commit()
             bot.send_message(message.chat.id, "⚡ Провели энергоаудит!\n💰 -70 +120 eco coin\n⛽ Gas level -4\n⭐ Reputation +1")
         else:
@@ -1556,6 +1800,10 @@ def energy_audit(message):
     finally:
         cursor.close()
         connection.close()
+    
+    game_over = check_game_over(telegram_id)
+    if game_over:
+        bot.send_message(message.chat.id, f"❌ Игра окончена!\n{game_over}")
 
 @bot.message_handler(commands=['repair_equipment'])
 def repair_equipment(message):
@@ -1564,21 +1812,33 @@ def repair_equipment(message):
     cursor = connection.cursor()
     
     try:
-        cursor.execute('SELECT location, balance FROM players WHERE telegram_id = ?', (telegram_id,))
+        cursor.execute('SELECT location, balance, last_repair_time FROM players WHERE telegram_id = ?', (telegram_id,))
         result = cursor.fetchone()
         
         if not result:
             bot.send_message(message.chat.id, "❌ Игрок не найден!")
             return
             
-        location, balance = result
+        location, balance, last_repair_time = result
+        current_time = int(time.time())
         
         if location != 'industrial_zone':
             bot.send_message(message.chat.id, "❌ Эта команда доступна только в промзоне!")
             return
             
+        if current_time - (last_repair_time or 0) < 300:
+            remaining = 300 - (current_time - (last_repair_time or 0))
+            bot.send_message(message.chat.id, f"⏳ Перезарядка: {remaining} секунд")
+            return
+            
         if balance >= 90:
-            cursor.execute('UPDATE players SET balance = balance - 90 + 140, passive_money = passive_money + 8 WHERE telegram_id = ?', (telegram_id,))
+            cursor.execute('''
+                UPDATE players 
+                SET balance = balance - 90 + 140, 
+                    passive_money = passive_money + 8,
+                    last_repair_time = ? 
+                WHERE telegram_id = ?
+            ''', (current_time, telegram_id))
             connection.commit()
             bot.send_message(message.chat.id, "🛠️ Отремонтировали оборудование!\n💰 -90 +140 eco coin\n💵 Passive money +8")
         else:
@@ -1589,6 +1849,10 @@ def repair_equipment(message):
     finally:
         cursor.close()
         connection.close()
+    
+    game_over = check_game_over(telegram_id)
+    if game_over:
+        bot.send_message(message.chat.id, f"❌ Игра окончена!\n{game_over}")
 
 def create_quest(telegram_id, quest_type, target, reward):
     connection = sq.connect('player.db')
@@ -1799,7 +2063,6 @@ def guide(message):
     bot.send_message(message.chat.id, guide_text)
 
 
-    
 @bot.message_handler(content_types=['text'])
 def handle_text(message):
     global selected_company, selected_True, current_category
